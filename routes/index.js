@@ -8,7 +8,12 @@ router.get('/', function(req, res, next) {
   axios.get(url)
     .then(response => {
       const levels = response.data['46'].provisional;
-      res.send(JSON.stringify(levels));
+      const latest = levels[levels.length - 1];
+      const latestObj = {
+        time: latest[0],
+        level: latest[1]
+      };
+      res.send(latestObj);
     })
     .catch(error => {
       res.send(error);
