@@ -2,6 +2,16 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
+const getUTC = now => {
+  var timeZoneOffset = now.getTimezoneOffset() * 60000;
+  return now.getTime() + timeZoneOffset;
+}
+
+const getPST = now => {
+  const utc = getUTC(now);
+  return utc + (3600000 * -8);
+}
+
 const getUrl = date => {
   const yr = date.getFullYear(), mn = date.getMonth(), dy = date.getDate();
   const dateStr = `${yr}-${mn < 9 ? `0${mn + 1}` : mn + 1}-${dy < 10 ? `0${dy}` : dy}`;
@@ -9,8 +19,9 @@ const getUrl = date => {
 }
 
 router.get('/', function(req, res, next) {
-  const date = new Date()
-  const url = getUrl(date)
+  const now = new Date();
+  const pst = new Date(getPST(now));
+  const url = getUrl(pst);
   axios.get(url)
     .then(response => {
       const levels = response.data['46'].provisional;
