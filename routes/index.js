@@ -13,10 +13,10 @@ router.get('/', function(req, res, next) {
         time: latest[0],
         level: latest[1]
       };
-      res.send(latestObj);
+      res.status(200).json(latestObj);
     })
     .catch(error => {
-      res.send(error);
+      res.status(400).json({ error: error });
     });
 });
 
