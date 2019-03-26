@@ -18,7 +18,7 @@ const getUrl = date => {
   return `https://wateroffice.ec.gc.ca/services/real_time_graph/json/inline?station=08HA009&start_date=${dateStr}&end_date=${dateStr}&param1=46`;
 }
 
-router.get('/', function(req, res, next) {
+const fetchWaterLevel = cb => {
   const now = new Date();
   const pst = new Date(getPST(now));
   const url = getUrl(pst);
@@ -30,11 +30,16 @@ router.get('/', function(req, res, next) {
         time: latest[0],
         level: latest[1]
       };
-      res.status(200).json(latestObj);
+      cb(200, latestObj);
     })
     .catch(error => {
-      res.status(400).json({ error: error });
+      cb(400, { error: error });
     });
+}
+
+router.get('/', function(req, res, next) {
+  const cb = (status, response) => res.status(status).json(response);
+  fetchWaterLevel(cb);
 });
 
 module.exports = router;
