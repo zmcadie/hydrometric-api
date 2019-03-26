@@ -2,9 +2,15 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-const url = "https://wateroffice.ec.gc.ca/services/real_time_graph/json/inline?station=08HA009&start_date=2019-03-26&end_date=2019-03-26&param1=46"
+const getUrl = date => {
+  const yr = date.getFullYear(), mn = date.getMonth(), dy = date.getDate();
+  const dateStr = `${yr}-${mn < 9 ? `0${mn + 1}` : mn + 1}-${dy < 10 ? `0${dy}` : dy}`;
+  return `https://wateroffice.ec.gc.ca/services/real_time_graph/json/inline?station=08HA009&start_date=${dateStr}&end_date=${dateStr}&param1=46`;
+}
 
 router.get('/', function(req, res, next) {
+  const date = new Date()
+  const url = getUrl(date)
   axios.get(url)
     .then(response => {
       const levels = response.data['46'].provisional;
