@@ -8,37 +8,35 @@ const getUTC = now => {
 }
 
 const getPST = now => {
-  const utc = getUTC(now);
+  const utc = getUTC(new Date(now));
   return utc + (3600000 * -8);
 }
 
-const getUrl = date => {
+const getUrl = (date, stationId) => {
   const yr = date.getFullYear(), mn = date.getMonth(), dy = date.getDate();
   const dateStr = `${yr}-${mn < 9 ? `0${mn + 1}` : mn + 1}-${dy < 10 ? `0${dy}` : dy}`;
-  return `https://wateroffice.ec.gc.ca/services/real_time_graph/json/inline?station=08HA009&start_date=${dateStr}&end_date=${dateStr}&param1=46`;
+  return `https://wateroffice.ec.gc.ca/services/real_time_graph/json/inline?station=${stationId}&start_date=${dateStr}&end_date=${dateStr}&param1=46`;
 }
 
 const fetchWaterLevelClosure = () => {
-  let date = new Date();
-  let waterLevel = {};
-  return cb => {
-    const now = new Date();
-    if (date.getTime() - now.getTime() < 3600000 && Object.keys(waterLevel).length > 0) {
-      cb(200, waterLevel)
+  let waterLevels = {};
+  return (cb, stationId) => {
+    const now = getUTC(new Date());
+    if (waterLevels[stationId] && waterLevels[stationId].data && waterLevels[stationId].lastReq - now < 3600000) {
+      cb(200, waterLevels[stationId].data)
     } else {
-      date = now;
-      const pst = new Date(getPST(date));
-      const url = getUrl(pst);
+      const pst = new Date(getPST(now));
+      const url = getUrl(pst, stationId);
       axios.get(url)
         .then(response => {
           const levels = response.data['46'].provisional;
           const latest = levels[levels.length - 1];
-          const latestObj = {
-            time: latest[0],
+          const data = {
+            date: latest[0],
             level: latest[1]
           };
-          waterLevel = latestObj;
-          cb(200, waterLevel);
+          waterLevels[stationId] = { data, lastReq: now };
+          cb(200, data);
         })
         .catch(error => {
           console.error(error);
@@ -50,9 +48,13 @@ const fetchWaterLevelClosure = () => {
 
 const fetchWaterLevel = fetchWaterLevelClosure();
 
-router.get('/', function(req, res, next) {
+router.get('/waterLevel/:stationId', function(req, res, next) {
+  const { stationId } = req.params
   const cb = (status, response) => res.status(status).json(response);
-  fetchWaterLevel(cb);
+  fetchWaterLevel(cb, stationId);
+});
+router.get('/', function(req, res, next) {
+  res.status('400').send('please provide a station id in request url');
 });
 
 module.exports = router;
