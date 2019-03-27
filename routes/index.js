@@ -60,13 +60,19 @@ const fetchWaterLevelClosure = () => {
 
 const fetchWaterLevel = fetchWaterLevelClosure();
 
-router.get('/waterLevel/:stationId/:timezone?', function(req, res, next) {
-  const { stationId, timezone } = req.params
+router.get('/waterLevel/:stationId/:timezone', function(req, res, next) {
+  const { stationId, timezone } = req.params;
   const cb = (status, response) => res.status(status).json(response);
-  fetchWaterLevel(cb, stationId, timezone || 'est');
+  fetchWaterLevel(cb, stationId, timezone);
+});
+router.get('/waterLevel/:stationId', function(req, res, next) {
+  res.status('400').send('please provide a standard timezone in request url');
+});
+router.get('/waterLevel', function(req, res, next) {
+  res.status('400').send('please provide a station id in request url');
 });
 router.get('/', function(req, res, next) {
-  res.status('400').send('please provide a station id in request url');
+  res.status('400').send('this is not an endpoint');
 });
 
 module.exports = router;
