@@ -13,9 +13,12 @@ const getPST = now => {
 }
 
 const getUrl = (date, stationId) => {
+  const yesterday = new Date(date.getTime() - (3600000 * 24));
   const yr = date.getFullYear(), mn = date.getMonth(), dy = date.getDate();
+  const yyr = yesterday.getFullYear(), ymn = yesterday.getMonth(), ydy = yesterday.getDate();
   const dateStr = `${yr}-${mn < 9 ? `0${mn + 1}` : mn + 1}-${dy < 10 ? `0${dy}` : dy}`;
-  return `https://wateroffice.ec.gc.ca/services/real_time_graph/json/inline?station=${stationId}&start_date=${dateStr}&end_date=${dateStr}&param1=46`;
+  const yDateStr = `${yyr}-${ymn < 9 ? `0${ymn + 1}` : ymn + 1}-${ydy < 10 ? `0${ydy}` : ydy}`;
+  return `https://wateroffice.ec.gc.ca/services/real_time_graph/json/inline?station=${stationId}&start_date=${yDateStr}&end_date=${dateStr}&param1=46`;
 }
 
 const fetchWaterLevelClosure = () => {
