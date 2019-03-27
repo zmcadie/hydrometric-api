@@ -2,14 +2,23 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-const getUTC = now => {
-  var timeZoneOffset = now.getTimezoneOffset() * 60000;
-  return now.getTime() + timeZoneOffset;
+const timezones = {
+  pst: -8,
+  mst: -7,
+  cst: -6,
+  est: -5,
+  ast: -4,
+  nst: -3.5
 }
 
-const getPST = now => {
+const getUTC = now => {
+  var timezoneOffset = now.getTimezoneOffset() * 60000;
+  return now.getTime() + timezoneOffset;
+}
+
+const getLocalTime = (now, timezone) => {
   const utc = getUTC(new Date(now));
-  return utc + (3600000 * -8);
+  return utc + (3600000 * timezones[timezone]);
 }
 
 const getUrl = (date, stationId) => {
@@ -23,13 +32,13 @@ const getUrl = (date, stationId) => {
 
 const fetchWaterLevelClosure = () => {
   let waterLevels = {};
-  return (cb, stationId) => {
+  return (cb, stationId, timezone) => {
     const now = getUTC(new Date());
     if (waterLevels[stationId] && waterLevels[stationId].data && waterLevels[stationId].lastReq - now < 3600000) {
       cb(200, waterLevels[stationId].data)
     } else {
-      const pst = new Date(getPST(now));
-      const url = getUrl(pst, stationId);
+      const localTime = new Date(getLocalTime(now, timezone));
+      const url = getUrl(localTime, stationId);
       axios.get(url)
         .then(response => {
           const levels = response.data['46'].provisional;
@@ -51,10 +60,10 @@ const fetchWaterLevelClosure = () => {
 
 const fetchWaterLevel = fetchWaterLevelClosure();
 
-router.get('/waterLevel/:stationId', function(req, res, next) {
-  const { stationId } = req.params
+router.get('/waterLevel/:stationId/:timezone?', function(req, res, next) {
+  const { stationId, timezone } = req.params
   const cb = (status, response) => res.status(status).json(response);
-  fetchWaterLevel(cb, stationId);
+  fetchWaterLevel(cb, stationId, timezone || 'est');
 });
 router.get('/', function(req, res, next) {
   res.status('400').send('please provide a station id in request url');
